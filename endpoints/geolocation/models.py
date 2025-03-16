@@ -2,18 +2,22 @@ from sqlmodel import SQLModel, Field
 from typing import Optional
 from datetime import datetime
 from pydantic import validator
+from pydantic import root_validator
 
-# Base model with shared fields
+
 class GeolocationBase(SQLModel):
     ip: Optional[str] = None
     url: Optional[str] = None
-    latitude: float
-    longitude: float
+    latitude: Optional[str] = None
+    longitude: Optional[str] = None
     country: Optional[str] = None
     city: Optional[str] = None
     region: Optional[str] = None
 
-# Database model for storing geolocation data
+    class Config:
+        extra = "forbid"
+
+
 class Geolocation(GeolocationBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -23,16 +27,29 @@ class Geolocation(GeolocationBase, table=True):
         return f"({self.latitude}, {self.longitude})"
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
 
-# Schema for creating a new geolocation
-class GeolocationCreate(GeolocationBase):
-    @validator('ip')
+
+class GeolocationCreate(SQLModel):
+    ip: Optional[str] = None
+    url: Optional[str] = None
+
+    @root_validator(pre=True)
+    def check_at_least_one_field(cls, values):
+        ip = values.get('ip')
+        url = values.get('url')
+        if not ip and not url:
+            raise ValueError("At least one of 'ip' or 'url' must be provided.")
+        if ip and url:
+            raise ValueError("Use url or ip, not both.")
+        return values
+
+    @validator("ip")
     def validate_ip(cls, v):
         if v is None:
             return v
         # Basic IPv4 validation
-        parts = v.split('.')
+        parts = v.split(".")
         if len(parts) != 4:
             raise ValueError("Invalid IPv4 address format")
         for part in parts:
@@ -44,6 +61,7 @@ class GeolocationCreate(GeolocationBase):
                 raise ValueError("IP address parts must be integers")
         return v
 
+
 # Schema for returning geolocation data
 class GeolocationResponse(GeolocationBase):
     id: int
@@ -51,4 +69,4 @@ class GeolocationResponse(GeolocationBase):
     updated_at: datetime
 
     class Config:
-        orm_mode = True 
+        from_attributes = True

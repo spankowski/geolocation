@@ -1,23 +1,27 @@
-from sqlmodel import SQLModel, Session, create_engine
-from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy.orm import sessionmaker
-
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlmodel import SQLModel
 from core.config import get_settings
 
-# Create database engine
-engine = create_engine(get_settings().DATABASE_URL)
+# Ensure the database URL is properly formatted for asyncpg
+DATABASE_URL = get_settings().DATABASE_URL.replace(
+    "postgresql://", "postgresql+asyncpg://"
+)
 
-# Create session factory
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Create an async engine
+engine = create_async_engine(DATABASE_URL, echo=True, future=True)
 
-# Dependency to get DB session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# Async session factory
+AsyncSessionLocal = async_sessionmaker(
+    bind=engine, class_=AsyncSession, expire_on_commit=False
+)
 
-# Create all tables in database
-def create_db_and_tables():
-    SQLModel.metadata.create_all(engine) 
+
+# Dependency to get an async database session
+async def get_async_db():
+    async with AsyncSessionLocal() as session:
+        yield session
+
+
+async def create_db_and_tables():
+    async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)

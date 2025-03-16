@@ -4,14 +4,15 @@ services:
   api:
     build: .
     container_name: geolocation_api
+    volumes:
+      - .:/app  # Mount local files inside the container
     ports:
       - "8000:8000"
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     env_file:
       - .env
     depends_on:
       - db
-    volumes:
-      - ./src:/app/src
     networks:
       - geolocation_network
 
