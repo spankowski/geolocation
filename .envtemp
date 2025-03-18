@@ -1,9 +1,9 @@
-# Database settings
+# Sample env:
 DB_ENGINE=postgresql+asyncpg
 DB_NAME=postgres
 DB_USER=postgres
 DB_PASSWORD=postgres
-DB_HOST=db
+DB_HOST=db # have to be db when using docker
 DB_PORT=5432
 
 # API Keys

@@ -1,9 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from endpoints.api import api_router
 from core.config import get_settings
-from core.database import create_db_and_tables
+from endpoints.api import api_router
 
 app = FastAPI(
     title=get_settings().PROJECT_NAME,
@@ -21,11 +20,6 @@ app.add_middleware(
 
 # Include API router
 app.include_router(api_router, prefix=get_settings().API_V1_STR)
-
-# Create tables on startup
-# @app.on_event("startup")
-# async def on_startup():
-#     await create_db_and_tables()
 
 
 @app.get("/")

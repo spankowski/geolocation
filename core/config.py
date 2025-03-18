@@ -1,21 +1,19 @@
 import os
 from typing import List
+
+from dotenv import load_dotenv
 from pydantic import model_validator
 from pydantic_settings import BaseSettings
-from dotenv import load_dotenv
 
-# Load environment variables from .env file
 load_dotenv()
 
 
 class Settings(BaseSettings):
     """Application settings"""
 
-    # API Settings
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "Geolocation API"
 
-    # Database settings
     DB_ENGINE: str = os.getenv("DB_ENGINE", "postgresql")
     DB_NAME: str = os.getenv("DB_NAME", "geolocation_db")
     DB_USER: str = os.getenv("DB_USER", "postgres")
@@ -23,19 +21,14 @@ class Settings(BaseSettings):
     DB_HOST: str = os.getenv("DB_HOST", "localhost")
     DB_PORT: str = os.getenv("DB_PORT", "5432")
 
-    # Construct the database URL
     @property
     def DATABASE_URL(self) -> str:
         return f"{self.DB_ENGINE}://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
-    # API Keys
     IPSTACK_API_KEY: str = os.getenv("IPSTACK_API_KEY", "")
 
-    # Application settings
     DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
 
-    # Don't define ALLOWED_HOSTS here - we'll set it manually after validation
-    # Application localization settings
     TIME_ZONE: str = "UTC"
     LANGUAGE_CODE: str = "en-us"
 
@@ -58,10 +51,19 @@ class Settings(BaseSettings):
     model_config = {
         "case_sensitive": True,
         "env_file": ".env",
-        # Skip validation for environment variables not defined in the model
         "extra": "ignore",
     }
 
 
 def get_settings() -> Settings:
-    return Settings()
+    class OverrideSettings(Settings):
+        model_config = {
+            "env_file": ".env.override",
+            "env_file_encoding": "utf-8",
+            "extra": "ignore",
+        }
+
+    if os.path.exists(".env.override"):
+        return OverrideSettings()
+    else:
+        return Settings()

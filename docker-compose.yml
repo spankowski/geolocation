@@ -8,11 +8,11 @@ services:
       - .:/app  # Mount local files inside the container
     ports:
       - "8000:8000"
-    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     env_file:
       - .env
     depends_on:
-      - db
+      db:
+        condition: service_healthy # Wait for the database to be healthy
     networks:
       - geolocation_network
 
@@ -21,12 +21,19 @@ services:
     container_name: geolocation_db
     ports:
       - "5432:5432"
-    env_file:
-      - .env
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - geolocation_network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:

@@ -1,11 +1,11 @@
 # services.py
-import requests
-from core.config import get_settings
-
-import aiohttp
-from core.config import get_settings
 import socket
 from urllib.parse import urlparse
+
+import aiohttp
+import requests
+
+from core.config import get_settings
 
 
 def get_ip_from_domain(domain):
@@ -34,10 +34,11 @@ async def fetch_geolocation(ip: str, domain: str | None = None):
             if response.status != 200:
                 return None
             data = await response.json()
-            print(data)
             return {
                 "ip": data.get("ip"),
-                "url": domain if domain else get_domain_from_ip(ip_address=data.get("ip")),
+                "url": domain
+                if domain
+                else get_domain_from_ip(ip_address=data.get("ip")),
                 "country": data.get("country_name"),
                 "city": data.get("city"),
                 "latitude": str(data.get("latitude")),

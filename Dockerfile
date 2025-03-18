@@ -22,12 +22,11 @@ WORKDIR /app
 
 # Copy dependency files first to leverage Docker caching
 COPY pyproject.toml poetry.lock /app/
-
-# Install dependencies (including uvicorn)
-RUN poetry install --no-root --no-dev
+RUN poetry install --no-root --only main
 
 # Copy the rest of the application code
 COPY . /app
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
 
-# Explicitly use uvicorn as the command
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
